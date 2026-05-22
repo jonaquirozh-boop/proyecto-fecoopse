@@ -118,3 +118,28 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
 }
+
+# ============================================================
+# CONFIGURACIÓN DE PRODUCCIÓN
+# ============================================================
+import os
+
+# Base de datos en volumen persistente para Docker
+# Si existe la variable DATABASE_PATH, usar esa ruta para SQLite
+_db_path = os.environ.get('DATABASE_PATH', BASE_DIR / 'db.sqlite3')
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': _db_path,
+    }
+}
+
+# WhiteNoise para archivos estáticos (ya debe estar en MIDDLEWARE)
+# Verificar que esté: 'whitenoise.middleware.WhiteNoiseMiddleware'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Seguridad básica para producción
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost,http://127.0.0.1'
+).split(',')
