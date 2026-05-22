@@ -1,3 +1,108 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Actividad, Pregunta, Evaluacion, RespuestaEscala, RespuestaAbierta
+
+
+@admin.register(Actividad)
+class ActividadAdmin(admin.ModelAdmin):
+    list_display = (
+        'nombre',
+        'tipo_actividad',
+        'expositor',
+        'fecha',
+        'activa',
+        'total_evaluaciones',
+        'creado_en',
+    )
+    list_filter = ('activa', 'fecha')
+    search_fields = ('nombre', 'expositor')
+    readonly_fields = ('clave_resultados', 'creado_en')
+    ordering = ('-creado_en',)
+
+    def total_evaluaciones(self, obj):
+        return obj.evaluaciones.count()
+
+    total_evaluaciones.short_description = 'Total respuestas'
+
+
+@admin.register(Pregunta)
+class PreguntaAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'texto_corto', 'seccion', 'tipo', 'orden')
+    list_filter = ('tipo', 'seccion')
+    search_fields = ('codigo', 'texto')
+    ordering = ('orden',)
+    list_editable = ('orden',)
+
+    def texto_corto(self, obj):
+        return obj.texto[:80] + '...' if len(obj.texto) > 80 else obj.texto
+
+    texto_corto.short_description = 'Pregunta'
+
+
+class RespuestaEscalaInline(admin.TabularInline):
+    model = RespuestaEscala
+    extra = 0
+    readonly_fields = ('pregunta', 'valor')
+    can_delete = False
+
+
+class RespuestaAbiertaInline(admin.TabularInline):
+    model = RespuestaAbierta
+    extra = 0
+    readonly_fields = ('pregunta', 'texto')
+    can_delete = False
+
+
+@admin.register(Evaluacion)
+class EvaluacionAdmin(admin.ModelAdmin):
+    list_display = (
+        'nombre_completo',
+        'cedula',
+        'actividad',
+        'enviada_en',
+        'total_respuestas',
+    )
+    list_filter = ('actividad', 'enviada_en')
+    search_fields = ('nombre', 'apellidos', 'cedula')
+    readonly_fields = ('enviada_en', 'ip_origen')
+    date_hierarchy = 'enviada_en'
+    ordering = ('-enviada_en',)
+    inlines = [RespuestaEscalaInline, RespuestaAbiertaInline]
+
+    def nombre_completo(self, obj):
+        return f"{obj.nombre} {obj.apellidos}"
+
+    nombre_completo.short_description = 'Participante'
+
+    def total_respuestas(self, obj):
+        return obj.respuestas_escala.count() + obj.respuestas_abiertas.count()
+
+    total_respuestas.short_description = 'Respuestas dadas'
+
+
+@admin.register(RespuestaEscala)
+class RespuestaEscalaAdmin(admin.ModelAdmin):
+    list_display = ('evaluacion', 'pregunta', 'valor')
+    list_filter = ('valor', 'pregunta__seccion')
+    search_fields = (
+        'evaluacion__nombre',
+        'evaluacion__apellidos',
+        'pregunta__codigo',
+    )
+
+
+@admin.register(RespuestaAbierta)
+class RespuestaAbiertaAdmin(admin.ModelAdmin):
+    list_display = ('evaluacion', 'pregunta', 'texto_corto')
+    list_filter = ('pregunta',)
+    search_fields = ('evaluacion__nombre', 'evaluacion__apellidos', 'texto')
+
+    def texto_corto(self, obj):
+        return obj.texto[:60] + '...' if len(obj.texto) > 60 else obj.texto
+
+    texto_corto.short_description = 'Respuesta'
+
+
+admin.site.site_header = "FECOOPSE - Administración"
+admin.site.site_title = "FECOOPSE Admin"
+admin.site.index_title = "Panel de Evaluaciones"

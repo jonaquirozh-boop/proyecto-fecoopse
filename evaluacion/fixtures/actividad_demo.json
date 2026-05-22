@@ -1,0 +1,15 @@
+[
+  {
+    "model": "evaluacion.actividad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Empoderamiento Profesional y Equidad de Género",
+      "tipo_actividad": "Día de la Secretaria",
+      "expositor": "Licda. Maria Rosa Rivas Brenes",
+      "fecha": "2026-04-24",
+      "clave_resultados": "fecoopse-resultados-2026",
+      "activa": true,
+      "creado_en": "2026-04-24T00:00:00Z"
+    }
+  }
+]

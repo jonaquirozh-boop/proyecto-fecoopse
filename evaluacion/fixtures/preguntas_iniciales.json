@@ -1,0 +1,310 @@
+[
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 1,
+    "fields": {
+      "codigo": "2.1.a",
+      "texto": "El grado de cumplimiento de los objetivos fue:",
+      "seccion": "Sobre la actividad en general",
+      "tipo": "escala",
+      "orden": 1
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 2,
+    "fields": {
+      "codigo": "2.1.b",
+      "texto": "El cumplimiento de actividades programadas fue:",
+      "seccion": "Sobre la actividad en general",
+      "tipo": "escala",
+      "orden": 2
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 3,
+    "fields": {
+      "codigo": "2.1.c",
+      "texto": "El contenido teórico o informativo fue:",
+      "seccion": "Sobre la actividad en general",
+      "tipo": "escala",
+      "orden": 3
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 4,
+    "fields": {
+      "codigo": "2.1.d",
+      "texto": "Las prácticas realizadas durante la actividad fueron:",
+      "seccion": "Sobre la actividad en general",
+      "tipo": "escala",
+      "orden": 4
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 5,
+    "fields": {
+      "codigo": "2.1.e",
+      "texto": "La correspondencia entre la duración en horas y desarrollo de los temas del programa fue:",
+      "seccion": "Sobre la actividad en general",
+      "tipo": "escala",
+      "orden": 5
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 6,
+    "fields": {
+      "codigo": "2.2.a",
+      "texto": "Su dominio de la materia fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 6
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 7,
+    "fields": {
+      "codigo": "2.2.b",
+      "texto": "Su capacidad para despertar interés en la materia fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 7
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 8,
+    "fields": {
+      "codigo": "2.2.c",
+      "texto": "Su capacidad para conducir grupos de trabajo fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 8
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 9,
+    "fields": {
+      "codigo": "2.2.d",
+      "texto": "Su manera de exponer fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 9
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 10,
+    "fields": {
+      "codigo": "2.2.e",
+      "texto": "Su disposición para contestar preguntas y atender consultas de los participantes fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 10
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 11,
+    "fields": {
+      "codigo": "2.2.f",
+      "texto": "Su puntualidad para asistir a las clases fue:",
+      "seccion": "Sobre el profesor",
+      "tipo": "escala",
+      "orden": 11
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 12,
+    "fields": {
+      "codigo": "2.3.a",
+      "texto": "Los métodos de enseñanza utilizados durante la actividad fueron:",
+      "seccion": "Sobre la metodología y los recursos utilizados",
+      "tipo": "escala",
+      "orden": 12
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 13,
+    "fields": {
+      "codigo": "2.4.a",
+      "texto": "Su propia participación la considera:",
+      "seccion": "Sobre el comportamiento de los participantes",
+      "tipo": "escala",
+      "orden": 13
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 14,
+    "fields": {
+      "codigo": "2.4.b",
+      "texto": "El trabajo en equipo fue:",
+      "seccion": "Sobre el comportamiento de los participantes",
+      "tipo": "escala",
+      "orden": 14
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 15,
+    "fields": {
+      "codigo": "2.4.c",
+      "texto": "El compañerismo entre los participantes fue:",
+      "seccion": "Sobre el comportamiento de los participantes",
+      "tipo": "escala",
+      "orden": 15
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 16,
+    "fields": {
+      "codigo": "2.4.d",
+      "texto": "La puntualidad de los participantes fue:",
+      "seccion": "Sobre el comportamiento de los participantes",
+      "tipo": "escala",
+      "orden": 16
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 17,
+    "fields": {
+      "codigo": "2.4.e",
+      "texto": "El cumplimiento de las tareas fue:",
+      "seccion": "Sobre el comportamiento de los participantes",
+      "tipo": "escala",
+      "orden": 17
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 18,
+    "fields": {
+      "codigo": "2.6.a",
+      "texto": "La organización de la actividad en cuanto a divulgación, inscripción y atención fue:",
+      "seccion": "Sobre la coordinación",
+      "tipo": "escala",
+      "orden": 18
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 19,
+    "fields": {
+      "codigo": "2.6.c",
+      "texto": "Los servicios adicionales de alimentación fueron:",
+      "seccion": "Sobre la coordinación",
+      "tipo": "escala",
+      "orden": 19
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 20,
+    "fields": {
+      "codigo": "2.7.a",
+      "texto": "La iluminación y ventilación de los locales fue:",
+      "seccion": "Sobre el ambiente físico",
+      "tipo": "escala",
+      "orden": 20
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 21,
+    "fields": {
+      "codigo": "2.7.b",
+      "texto": "El aislamiento de los locales contra ruidos fue:",
+      "seccion": "Sobre el ambiente físico",
+      "tipo": "escala",
+      "orden": 21
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 22,
+    "fields": {
+      "codigo": "2.7.c",
+      "texto": "El mobiliario de los locales fue:",
+      "seccion": "Sobre el ambiente físico",
+      "tipo": "escala",
+      "orden": 22
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 23,
+    "fields": {
+      "codigo": "2.7.d",
+      "texto": "La limpieza y orden de los locales fueron:",
+      "seccion": "Sobre el ambiente físico",
+      "tipo": "escala",
+      "orden": 23
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 24,
+    "fields": {
+      "codigo": "2.7.e",
+      "texto": "Las instalaciones sanitarias disponibles fueron:",
+      "seccion": "Sobre el ambiente físico",
+      "tipo": "escala",
+      "orden": 24
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 25,
+    "fields": {
+      "codigo": "3.1",
+      "texto": "¿Considera usted que los conocimientos adquiridos durante este curso se pueden transferir a su trabajo cotidiano? Explique brevemente.",
+      "seccion": "Para mejorar la actividad",
+      "tipo": "abierta",
+      "orden": 25
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 26,
+    "fields": {
+      "codigo": "3.2",
+      "texto": "¿Qué temas recomienda ampliar, incluir o suprimir?",
+      "seccion": "Para mejorar la actividad",
+      "tipo": "abierta",
+      "orden": 26
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 27,
+    "fields": {
+      "codigo": "3.3",
+      "texto": "¿Qué sugerencias adicionales daría usted para mejorar la actividad?",
+      "seccion": "Para mejorar la actividad",
+      "tipo": "abierta",
+      "orden": 27
+    }
+  },
+  {
+    "model": "evaluacion.pregunta",
+    "pk": 28,
+    "fields": {
+      "codigo": "3.4",
+      "texto": "Otros comentarios:",
+      "seccion": "Para mejorar la actividad",
+      "tipo": "abierta",
+      "orden": 28
+    }
+  }
+]
