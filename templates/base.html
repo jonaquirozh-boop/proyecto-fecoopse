@@ -1,16 +1,28 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}FECOOPSE - Evaluacion Dia de la Secretaria{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FECOOPSE - Evaluación{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'feco-blue': '#1B5EA8',
+                        'feco-blue-dark': '#144a87',
+                        'feco-blue-light': '#e8f0fb',
+                    }
+                }
+            }
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gray-50">
-    <main class="flex min-h-screen items-center justify-center p-4">
-        {% block content %}{% endblock %}
-    </main>
+<body class="bg-gray-50 min-h-screen">
+    {% block content %}{% endblock %}
 </body>
 </html>

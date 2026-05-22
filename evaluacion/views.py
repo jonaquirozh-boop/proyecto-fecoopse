@@ -1,3 +1,8 @@
+import json
+
+from django.http import Http404
+from django.template.defaultfilters import slugify
+from django.views.generic import TemplateView
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -5,6 +10,116 @@ from rest_framework.views import APIView
 
 from .models import Actividad, Pregunta, RespuestaAbierta, RespuestaEscala
 from .serializers import EvaluacionCreateSerializer
+
+
+class FormularioView(TemplateView):
+    template_name = 'evaluacion/formulario.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['actividad'] = Actividad.objects.filter(activa=True).first()
+        ctx['preguntas_escala'] = list(
+            Pregunta.objects.filter(tipo='escala').order_by('orden').values(
+                'codigo',
+                'texto',
+                'seccion',
+                'orden',
+            )
+        )
+        ctx['preguntas_abiertas'] = list(
+            Pregunta.objects.filter(tipo='abierta').order_by('orden').values(
+                'codigo',
+                'texto',
+                'orden',
+            )
+        )
+        ctx['preguntas_escala_json'] = json.dumps(ctx['preguntas_escala'])
+        ctx['preguntas_abiertas_json'] = json.dumps(ctx['preguntas_abiertas'])
+        return ctx
+
+
+class GraciasView(TemplateView):
+    template_name = 'evaluacion/gracias.html'
+
+
+class DashboardView(TemplateView):
+    template_name = 'evaluacion/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        clave = self.kwargs.get('clave')
+
+        try:
+            actividad = Actividad.objects.get(clave_resultados=clave)
+        except Actividad.DoesNotExist as exc:
+            raise Http404 from exc
+
+        preguntas_escala = []
+        for pregunta in Pregunta.objects.filter(tipo='escala').order_by('orden'):
+            respuestas = RespuestaEscala.objects.filter(
+                evaluacion__actividad=actividad,
+                pregunta=pregunta,
+            )
+            conteos = {
+                opcion: respuestas.filter(valor=opcion).count()
+                for opcion in ['MB', 'B', 'R', 'D', 'MD', 'NA']
+            }
+            valores = [
+                RespuestaEscala.VALOR_NUMERICO[valor]
+                for valor in respuestas.exclude(valor='NA').values_list('valor', flat=True)
+                if valor in RespuestaEscala.VALOR_NUMERICO
+            ]
+            promedio = round(sum(valores) / len(valores), 1) if valores else None
+            preguntas_escala.append(
+                {
+                    'codigo': pregunta.codigo,
+                    'chart_id': slugify(pregunta.codigo),
+                    'texto': pregunta.texto,
+                    'seccion': pregunta.seccion,
+                    'promedio': promedio,
+                    'total_respuestas': respuestas.count(),
+                    'conteos': conteos,
+                }
+            )
+
+        respuestas_abiertas = []
+        for pregunta in Pregunta.objects.filter(tipo='abierta').order_by('orden'):
+            textos = list(
+                RespuestaAbierta.objects.filter(
+                    evaluacion__actividad=actividad,
+                    pregunta=pregunta,
+                )
+                .exclude(texto='')
+                .order_by('-evaluacion__enviada_en')
+                .values_list('texto', flat=True)
+            )
+            respuestas_abiertas.append(
+                {
+                    'codigo': pregunta.codigo,
+                    'texto_pregunta': pregunta.texto,
+                    'respuestas': textos,
+                }
+            )
+
+        todos_promedios = [p['promedio'] for p in preguntas_escala if p['promedio']]
+        promedio_general = (
+            round(sum(todos_promedios) / len(todos_promedios), 1)
+            if todos_promedios
+            else None
+        )
+
+        secciones = {}
+        for pregunta in preguntas_escala:
+            secciones.setdefault(pregunta['seccion'], []).append(pregunta)
+
+        ctx['actividad'] = actividad
+        ctx['total_evaluaciones'] = actividad.evaluaciones.count()
+        ctx['promedio_general'] = promedio_general
+        ctx['secciones'] = secciones
+        ctx['preguntas_escala'] = preguntas_escala
+        ctx['respuestas_abiertas'] = respuestas_abiertas
+        ctx['preguntas_escala_json'] = json.dumps(preguntas_escala)
+        return ctx
 
 
 class EvaluacionCreateView(APIView):

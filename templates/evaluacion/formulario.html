@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FECOOPSE - Formulario de Evaluación{% endblock %}
+
+{% block extra_head %}
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script type="application/json" id="preguntas-escala-data">
+  {{ preguntas_escala_json|safe }}
+</script>
+<script type="application/json" id="preguntas-abiertas-data">
+  {{ preguntas_abiertas_json|safe }}
+</script>
+
+<div
+    x-data="formularioEvaluacion()"
+    x-init="init()"
+    x-cloak
+    class="min-h-screen bg-gray-50 text-gray-800"
+>
+    {% csrf_token %}
+
+    <header class="fixed left-0 right-0 top-0 z-20 bg-white shadow-sm">
+        <div class="mx-auto flex h-16 max-w-4xl items-center justify-center px-4">
+            <img src="{% static 'img/logo-fecoopse.png' %}" alt="FECOOPSE" class="h-10 w-auto">
+        </div>
+        <div class="h-1 bg-gray-100">
+            <div class="h-1 bg-feco-blue transition-all duration-300" :style="'width: ' + progreso + '%'"></div>
+        </div>
+    </header>
+
+    <main class="flex min-h-screen items-center justify-center px-4 pb-8 pt-24">
+        <section x-show="enviando" class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+            <div class="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-feco-blue"></div>
+            <p class="text-lg font-semibold text-gray-800">Enviando tu evaluación...</p>
+        </section>
+
+        <section
+            x-show="!enviando && paso === 0"
+            class="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg sm:p-8"
+        >
+            <img src="{% static 'img/logo-fecoopse.png' %}" alt="FECOOPSE" class="mx-auto mb-6 h-20 w-auto">
+            <div class="mb-6 text-center">
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {% if actividad %}{{ actividad.nombre }}{% else %}Evaluación FECOOPSE{% endif %}
+                </h1>
+                <p class="mt-2 text-base font-medium text-feco-blue">
+                    {% if actividad %}{{ actividad.tipo_actividad }}{% else %}Formulario de evaluación{% endif %}
+                </p>
+                <p class="mt-4 text-sm leading-6 text-gray-600">
+                    Este formulario nos ayuda a mejorar nuestras actividades. Tarda menos de 5 minutos en completarse.
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <input
+                    type="text"
+                    x-model="cedula"
+                    placeholder="Cédula nacional, DIMEX o DIMES"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
+                >
+                <input
+                    type="text"
+                    x-model="nombre"
+                    placeholder="Tu nombre"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
+                >
+                <input
+                    type="text"
+                    x-model="apellidos"
+                    placeholder="Tus apellidos"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
+                >
+            </div>
+
+            <p x-show="errorCampos" x-text="errorCampos" class="mt-4 text-sm font-medium text-red-600"></p>
+
+            <button
+                type="button"
+                @click="avanzarDesdeBienvenida()"
+                class="mt-6 w-full rounded-xl bg-feco-blue py-4 text-lg font-semibold text-white transition hover:bg-feco-blue-dark"
+            >
+                Comenzar evaluación →
+            </button>
+        </section>
+
+        <section
+            x-show="!enviando && preguntaEscalaActual"
+            class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg sm:p-8"
+        >
+            <button
+                type="button"
+                x-show="paso > 0"
+                @click="paso = Math.max(0, paso - 1)"
+                class="mb-6 text-sm font-medium text-gray-500 transition hover:text-feco-blue"
+            >
+                ← Anterior
+            </button>
+
+            <p class="text-center text-sm font-medium text-feco-blue" x-text="preguntaEscalaActual?.seccion"></p>
+            <h2 class="mt-4 text-center text-xl font-semibold leading-8 text-gray-800" x-text="preguntaEscalaActual?.texto"></h2>
+
+            <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <template x-for="opcion in opcionesEscala" :key="opcion.valor">
+                    <button
+                        type="button"
+                        @click="seleccionarEscala(preguntaEscalaActual.codigo, opcion.valor)"
+                        class="rounded-xl border-2 px-3 py-4 text-center transition"
+                        :class="respuestasEscala[preguntaEscalaActual?.codigo] === opcion.valor ? 'border-feco-blue bg-feco-blue-light text-feco-blue' : 'border-gray-200 text-gray-700 hover:border-blue-300'"
+                    >
+                        <span class="block text-lg font-bold" x-text="opcion.valor"></span>
+                        <span class="mt-1 block text-xs font-medium" x-text="opcion.texto"></span>
+                    </button>
+                </template>
+            </div>
+        </section>
+
+        <section
+            x-show="!enviando && esPasoAbiertas"
+            class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg sm:p-8"
+        >
+            <button
+                type="button"
+                x-show="paso > 0"
+                @click="paso = Math.max(0, paso - 1)"
+                class="mb-6 text-sm font-medium text-gray-500 transition hover:text-feco-blue"
+            >
+                ← Anterior
+            </button>
+
+            <p class="text-center text-sm font-medium text-feco-blue">Para mejorar la actividad</p>
+            <h2 class="mt-4 text-center text-xl font-semibold leading-8 text-gray-800" x-text="preguntaAbiertaActual?.texto"></h2>
+
+            <textarea
+                rows="4"
+                x-model="respuestasAbiertas[preguntaAbiertaActual?.codigo]"
+                class="mt-8 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
+            ></textarea>
+            <p class="mt-2 text-sm text-gray-500">Esta respuesta es opcional</p>
+
+            <p x-show="error" x-text="error" class="mt-4 text-sm font-medium text-red-600"></p>
+
+            <button
+                type="button"
+                @click="avanzarAbierta()"
+                class="mt-6 w-full rounded-xl bg-feco-blue py-4 text-lg font-semibold text-white transition hover:bg-feco-blue-dark"
+            >
+                <span x-text="esUltimoPasoAbiertas ? 'Enviar evaluación ✓' : 'Siguiente →'"></span>
+            </button>
+        </section>
+    </main>
+</div>
+
+<script>
+    function formularioEvaluacion() {
+        return {
+            paso: 0,
+            totalPasos: 0,
+            cedula: '',
+            nombre: '',
+            apellidos: '',
+            respuestasEscala: {},
+            respuestasAbiertas: {},
+            preguntasEscala: [],
+            preguntasAbiertas: [],
+            enviando: false,
+            enviado: false,
+            error: '',
+            errorCampos: '',
+            opcionesEscala: [
+                { valor: 'NA', texto: 'No Aplica' },
+                { valor: 'MB', texto: 'Muy Bueno' },
+                { valor: 'B', texto: 'Bueno' },
+                { valor: 'R', texto: 'Regular' },
+                { valor: 'D', texto: 'Deficiente' },
+                { valor: 'MD', texto: 'Muy Deficiente' },
+            ],
+
+            init() {
+                this.preguntasEscala = JSON.parse(document.getElementById('preguntas-escala-data').textContent)
+                this.preguntasAbiertas = JSON.parse(document.getElementById('preguntas-abiertas-data').textContent)
+                this.totalPasos = 1 + this.preguntasEscala.length + this.preguntasAbiertas.length
+            },
+
+            get progreso() {
+                return Math.round((this.paso / this.totalPasos) * 100)
+            },
+
+            get preguntaEscalaActual() {
+                if (this.paso >= 1 && this.paso <= this.preguntasEscala.length) {
+                    return this.preguntasEscala[this.paso - 1]
+                }
+                return null
+            },
+
+            get preguntaAbiertaActual() {
+                const idx = this.paso - 1 - this.preguntasEscala.length
+                if (idx >= 0 && idx < this.preguntasAbiertas.length) {
+                    return this.preguntasAbiertas[idx]
+                }
+                return null
+            },
+
+            get esPasoAbiertas() {
+                return this.paso > this.preguntasEscala.length && this.paso <= this.totalPasos - 1
+            },
+
+            get esUltimoPasoAbiertas() {
+                return this.paso === this.totalPasos - 1
+            },
+
+            validarDatosPersonales() {
+                if (!this.cedula.trim() || this.cedula.trim().length < 5) {
+                    this.errorCampos = 'Por favor ingresá un número de cédula válido (mínimo 5 caracteres).'
+                    return false
+                }
+                if (!this.nombre.trim()) {
+                    this.errorCampos = 'Por favor ingresá tu nombre.'
+                    return false
+                }
+                if (!this.apellidos.trim()) {
+                    this.errorCampos = 'Por favor ingresá tus apellidos.'
+                    return false
+                }
+                this.errorCampos = ''
+                return true
+            },
+
+            avanzarDesdeBienvenida() {
+                if (this.validarDatosPersonales()) {
+                    this.paso = 1
+                }
+            },
+
+            seleccionarEscala(codigo, valor) {
+                this.respuestasEscala[codigo] = valor
+                setTimeout(() => { this.paso++ }, 400)
+            },
+
+            avanzarAbierta() {
+                if (this.esUltimoPasoAbiertas) {
+                    this.enviar()
+                } else {
+                    this.paso++
+                }
+            },
+
+            async enviar() {
+                this.enviando = true
+                this.error = ''
+
+                const payload = {
+                    cedula: this.cedula.trim(),
+                    nombre: this.nombre.trim(),
+                    apellidos: this.apellidos.trim(),
+                    respuestas_escala: Object.entries(this.respuestasEscala).map(([codigo, valor]) => ({
+                        pregunta_codigo: codigo,
+                        valor: valor
+                    })),
+                    respuestas_abiertas: Object.entries(this.respuestasAbiertas)
+                        .filter(([_, texto]) => texto && texto.trim())
+                        .map(([codigo, texto]) => ({
+                            pregunta_codigo: codigo,
+                            texto: texto.trim()
+                        }))
+                }
+
+                try {
+                    const response = await fetch('/api/evaluacion/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                        },
+                        body: JSON.stringify(payload)
+                    })
+
+                    if (response.ok) {
+                        this.enviado = true
+                        window.location.href = '/gracias/'
+                    } else {
+                        await response.json()
+                        this.error = 'Hubo un error al enviar. Por favor intentá de nuevo.'
+                        this.enviando = false
+                    }
+                } catch(e) {
+                    this.error = 'Error de conexión. Verificá tu internet e intentá de nuevo.'
+                    this.enviando = false
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}

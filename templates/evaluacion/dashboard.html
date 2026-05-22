@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FECOOPSE - Resultados{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-gray-50">
+    <div class="mx-auto max-w-5xl px-4 py-8">
+        <div class="mb-6 flex items-center justify-between rounded-2xl bg-white p-6 shadow-sm">
+            <img src="{% static 'img/logo-fecoopse.png' %}" class="h-12 w-auto" alt="FECOOPSE">
+            <div class="text-right">
+                <h1 class="text-xl font-bold text-gray-800">{{ actividad.nombre }}</h1>
+                <p class="text-sm text-gray-500">{{ actividad.tipo_actividad }} · {{ actividad.fecha }}</p>
+                <p class="text-sm text-gray-500">Expositor/a: {{ actividad.expositor }}</p>
+            </div>
+        </div>
+
+        <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="rounded-2xl bg-white p-6 text-center shadow-sm">
+                <div class="text-4xl font-bold text-feco-blue">{{ total_evaluaciones }}</div>
+                <div class="mt-1 text-sm text-gray-500">Evaluaciones recibidas</div>
+            </div>
+            <div class="rounded-2xl bg-white p-6 text-center shadow-sm">
+                <div class="text-4xl font-bold text-green-600">
+                    {% if promedio_general %}{{ promedio_general }}{% else %}-{% endif %}
+                </div>
+                <div class="mt-1 text-sm text-gray-500">Promedio general (sobre 5)</div>
+            </div>
+            <div class="rounded-2xl bg-white p-6 text-center shadow-sm">
+                <div class="text-4xl font-bold text-feco-blue">{{ preguntas_escala|length }}</div>
+                <div class="mt-1 text-sm text-gray-500">Criterios evaluados</div>
+            </div>
+        </div>
+
+        {% for seccion, preguntas in secciones.items %}
+        <div class="mb-4 rounded-2xl bg-white p-6 shadow-sm">
+            <h2 class="mb-4 border-b border-gray-100 pb-2 text-lg font-bold text-feco-blue">
+                {{ seccion }}
+            </h2>
+            {% for pregunta in preguntas %}
+            <div class="mb-6">
+                <div class="mb-2 flex items-start justify-between">
+                    <p class="flex-1 pr-4 text-sm font-medium text-gray-700">{{ pregunta.texto }}</p>
+                    {% if pregunta.promedio %}
+                        {% if pregunta.promedio >= 4.0 %}
+                        <span class="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-700">
+                            ★ {{ pregunta.promedio }}
+                        </span>
+                        {% elif pregunta.promedio >= 3.0 %}
+                        <span class="whitespace-nowrap rounded-full bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700">
+                            ★ {{ pregunta.promedio }}
+                        </span>
+                        {% else %}
+                        <span class="whitespace-nowrap rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">
+                            ★ {{ pregunta.promedio }}
+                        </span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <canvas id="chart-{{ pregunta.codigo }}" style="height:140px; max-height:140px;"></canvas>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="mb-4 rounded-2xl bg-white p-6 shadow-sm">
+            <h2 class="mb-4 border-b border-gray-100 pb-2 text-lg font-bold text-feco-blue">
+                Para mejorar la actividad
+            </h2>
+            {% for seccion_abierta in respuestas_abiertas %}
+            <div class="mb-6" x-data="{ abierto: false }">
+                <button
+                    type="button"
+                    @click="abierto = !abierto"
+                    class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-feco-blue-light"
+                >
+                    <span class="text-sm font-medium text-gray-700">{{ seccion_abierta.texto_pregunta }}</span>
+                    <span class="ml-2 font-bold text-feco-blue">
+                        ({{ seccion_abierta.respuestas|length }})
+                        <span x-text="abierto ? '▲' : '▼'" class="ml-1 text-xs"></span>
+                    </span>
+                </button>
+                <div x-show="abierto" x-transition class="mt-2 space-y-2">
+                    {% for respuesta in seccion_abierta.respuestas %}
+                    <div class="rounded-xl border-l-4 border-feco-blue bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                        {{ respuesta }}
+                    </div>
+                    {% empty %}
+                    <p class="px-4 text-sm text-gray-400">Sin respuestas en esta pregunta.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-8 pb-8 text-center text-xs text-gray-400">
+            FECOOPSE · Liderazgo en Acción · Resultados confidenciales
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const preguntas = {{ preguntas_escala_json|safe }};
+  
+  const COLORES = {
+    'MB': '#16a34a',
+    'B':  '#84cc16',
+    'R':  '#eab308',
+    'D':  '#f97316',
+    'MD': '#dc2626',
+    'NA': '#d1d5db',
+  };
+
+  const LABELS = {
+    'MB': 'Muy\nBueno',
+    'B':  'Bueno',
+    'R':  'Regular',
+    'D':  'Deficiente',
+    'MD': 'Muy\nDeficiente',
+    'NA': 'No\nAplica',
+  };
+
+  preguntas.forEach(function(pregunta) {
+    const canvasId = 'chart-' + pregunta.codigo;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const opciones = ['MB', 'B', 'R', 'D', 'MD', 'NA'];
+    const datos = opciones.map(op => pregunta.conteos[op] || 0);
+    const colores = opciones.map(op => COLORES[op]);
+    const labels = opciones.map(op => LABELS[op]);
+
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: datos,
+          backgroundColor: colores,
+          borderRadius: 8,
+          borderSkipped: false,
+          barPercentage: 0.6,
+          categoryPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'x',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const total = pregunta.total_respuestas;
+                const pct = total > 0 ? Math.round((ctx.raw / total) * 100) : 0;
+                return ` ${ctx.raw} respuestas (${pct}%)`;
+              }
+            }
+          },
+          datalabels: { display: false }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { 
+              font: { size: 11, weight: '500' },
+              color: '#374151',
+            },
+            border: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: { size: 10 },
+              color: '#9ca3af',
+            },
+            grid: { color: '#f3f4f6' },
+            border: { display: false }
+          }
+        }
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
