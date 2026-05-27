@@ -1,20 +1,31 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}FECOOPSE - Gracias{% endblock %}
+{% block title %}¡Gracias! — FECOOPSE{% endblock %}
 
 {% block content %}
-<main class="flex min-h-screen items-center justify-center px-4 py-10">
-    <section class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-        <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <svg class="h-10 w-10 text-green-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900">¡Gracias por tu evaluación!</h1>
-        <p class="mt-3 text-base font-medium text-feco-blue">Tu opinión es muy valiosa para FECOOPSE.</p>
-        <p class="mt-4 text-sm leading-6 text-gray-600">Tus respuestas han sido registradas correctamente.</p>
-        <img src="{% static 'img/logo-fecoopse.png' %}" alt="FECOOPSE" class="mx-auto mt-8 h-10 w-auto">
-    </section>
-</main>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4">
+  <div class="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center">
+    
+    <div class="text-6xl mb-6">✅</div>
+    
+    <h1 class="text-2xl font-bold text-gray-800 mb-3">
+      ¡Gracias por tu evaluación!
+    </h1>
+    
+    <p class="text-gray-500 mb-6 leading-relaxed">
+      Tu opinión es muy valiosa para FECOOPSE.<br>
+      Tus respuestas han sido registradas correctamente.
+    </p>
+    
+    <div class="bg-blue-50 rounded-2xl p-4 mb-8">
+      <p class="text-feco-blue text-sm font-medium">
+        "Liderazgo en Acción"
+      </p>
+    </div>
+    
+    <img src="{% static 'img/logo-fecoopse.png' %}" class="h-10 mx-auto opacity-60" alt="FECOOPSE">
+    
+  </div>
+</div>
 {% endblock %}

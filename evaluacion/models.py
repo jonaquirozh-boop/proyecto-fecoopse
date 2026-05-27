@@ -29,16 +29,19 @@ class Actividad(models.Model):
 class Pregunta(models.Model):
     TIPO_ESCALA = 'escala'
     TIPO_ABIERTA = 'abierta'
+    TIPO_CONDICIONAL = 'condicional'
 
     TIPOS = [
         (TIPO_ESCALA, 'Escala'),
         (TIPO_ABIERTA, 'Abierta'),
+        (TIPO_CONDICIONAL, 'Condicional'),
     ]
 
     codigo = models.CharField(max_length=10, unique=True)
     texto = models.TextField()
     seccion = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPOS)
+    pantalla = models.CharField(max_length=50, blank=True)
     orden = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -56,9 +59,7 @@ class Evaluacion(models.Model):
         on_delete=models.CASCADE,
         related_name='evaluaciones',
     )
-    cedula = models.CharField(max_length=30)
-    nombre = models.CharField(max_length=100)
-    apellidos = models.CharField(max_length=150)
+    correo = models.EmailField()
     enviada_en = models.DateTimeField(auto_now_add=True)
     ip_origen = models.GenericIPAddressField(null=True, blank=True)
 
@@ -66,28 +67,20 @@ class Evaluacion(models.Model):
         verbose_name = "Evaluación"
         verbose_name_plural = "Evaluaciones"
         ordering = ['-enviada_en']
+        unique_together = ['actividad', 'correo']
 
     def __str__(self):
-        return f"{self.nombre} {self.apellidos} - {self.actividad.nombre}"
+        return f"{self.correo} - {self.actividad.nombre}"
 
 
 class RespuestaEscala(models.Model):
     OPCIONES_ESCALA = [
-        ('NA', 'No Aplica'),
-        ('MB', 'Muy Bueno'),
-        ('B', 'Bueno'),
-        ('R', 'Regular'),
-        ('D', 'Deficiente'),
-        ('MD', 'Muy Deficiente'),
+        (5, 'MB - Muy Bueno'),
+        (4, 'B - Bueno'),
+        (3, 'R - Regular'),
+        (2, 'D - Deficiente'),
+        (1, 'MD - Muy Deficiente'),
     ]
-
-    VALOR_NUMERICO = {
-        'MB': 5,
-        'B': 4,
-        'R': 3,
-        'D': 2,
-        'MD': 1,
-    }
 
     evaluacion = models.ForeignKey(
         Evaluacion,
@@ -95,7 +88,7 @@ class RespuestaEscala(models.Model):
         related_name='respuestas_escala',
     )
     pregunta = models.ForeignKey(Pregunta, on_delete=models.PROTECT)
-    valor = models.CharField(max_length=2, choices=OPCIONES_ESCALA)
+    valor = models.IntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Respuesta de escala"
@@ -103,7 +96,34 @@ class RespuestaEscala(models.Model):
         unique_together = ['evaluacion', 'pregunta']
 
     def __str__(self):
-        return f"{self.pregunta.codigo}: {self.get_valor_display()}"
+        if self.valor is None:
+            return f"{self.pregunta.codigo}: NA"
+        return f"{self.pregunta.codigo}: {self.valor}"
+
+
+class RespuestaCondicional(models.Model):
+    OPCIONES = [
+        ('SI', 'Sí'),
+        ('PARCIAL', 'Parcialmente'),
+        ('NO', 'No'),
+    ]
+
+    evaluacion = models.ForeignKey(
+        Evaluacion,
+        on_delete=models.CASCADE,
+        related_name='respuestas_condicionales',
+    )
+    pregunta = models.ForeignKey(Pregunta, on_delete=models.PROTECT)
+    opcion = models.CharField(max_length=10, choices=OPCIONES)
+    justificacion = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Respuesta condicional"
+        verbose_name_plural = "Respuestas condicionales"
+        unique_together = ['evaluacion', 'pregunta']
+
+    def __str__(self):
+        return f"{self.pregunta.codigo}: {self.get_opcion_display()}"
 
 
 class RespuestaAbierta(models.Model):

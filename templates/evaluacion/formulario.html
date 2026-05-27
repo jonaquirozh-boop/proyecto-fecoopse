@@ -1,301 +1,492 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}FECOOPSE - Formulario de Evaluación{% endblock %}
-
-{% block extra_head %}
-<style>
-    [x-cloak] {
-        display: none !important;
-    }
-</style>
-{% endblock %}
+{% block title %}Evaluación — {{ actividad.nombre }}{% endblock %}
 
 {% block content %}
-<script type="application/json" id="preguntas-escala-data">
-  {{ preguntas_escala_json|safe }}
-</script>
-<script type="application/json" id="preguntas-abiertas-data">
-  {{ preguntas_abiertas_json|safe }}
-</script>
 
-<div
-    x-data="formularioEvaluacion()"
-    x-init="init()"
-    x-cloak
-    class="min-h-screen bg-gray-50 text-gray-800"
->
-    {% csrf_token %}
+<!-- Data para Alpine -->
+<script type="application/json" id="preguntas-escala-data">{{ preguntas_escala_json|safe }}</script>
+<script type="application/json" id="preguntas-condicionales-data">{{ preguntas_condicionales_json|safe }}</script>
+<script type="application/json" id="preguntas-abiertas-data">{{ preguntas_abiertas_json|safe }}</script>
+{% csrf_token %}
 
-    <header class="fixed left-0 right-0 top-0 z-20 bg-white shadow-sm">
-        <div class="mx-auto flex h-16 max-w-4xl items-center justify-center px-4">
-            <img src="{% static 'img/logo-fecoopse.png' %}" alt="FECOOPSE" class="h-10 w-auto">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50"
+     x-data="formulario()"
+     x-init="init()">
+
+  <!-- HEADER FIJO -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <img src="{% static 'img/logo-fecoopse.png' %}" class="h-8" alt="FECOOPSE">
+      <!-- Barra de progreso -->
+      <div class="flex-1 mx-4">
+        <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div class="h-full bg-feco-blue rounded-full transition-all duration-500"
+               :style="'width: ' + progreso + '%'"></div>
         </div>
-        <div class="h-1 bg-gray-100">
-            <div class="h-1 bg-feco-blue transition-all duration-300" :style="'width: ' + progreso + '%'"></div>
+      </div>
+      <span class="text-xs text-gray-400 whitespace-nowrap" x-text="pasoTexto"></span>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="pt-16 pb-8 min-h-screen flex items-center justify-center px-4">
+
+    <!-- ============================
+         PASO 0: BIENVENIDA
+         ============================ -->
+    <div x-show="paso === 0" x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="w-full max-w-md">
+
+      <div class="bg-white rounded-3xl shadow-xl p-8 text-center">
+        <!-- Logo grande -->
+        <img src="{% static 'img/logo-fecoopse.png' %}" class="h-16 mx-auto mb-6" alt="FECOOPSE">
+
+        <!-- Título del evento -->
+        <h1 class="text-2xl font-bold text-gray-800 mb-1" x-text="actividad.nombre"></h1>
+        <p class="text-feco-blue font-medium text-sm mb-6" x-text="actividad.tipo_actividad"></p>
+
+        <!-- Descripción -->
+        <div class="bg-blue-50 rounded-2xl p-4 mb-8">
+          <p class="text-gray-600 text-sm leading-relaxed">
+            Tu retroalimentación nos ayuda a mejorar.<br>
+            <strong>Tomará menos de 2 minutos.</strong>
+          </p>
         </div>
-    </header>
 
-    <main class="flex min-h-screen items-center justify-center px-4 pb-8 pt-24">
-        <section x-show="enviando" class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-            <div class="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-feco-blue"></div>
-            <p class="text-lg font-semibold text-gray-800">Enviando tu evaluación...</p>
-        </section>
+        <!-- Info del evento -->
+        <div class="text-xs text-gray-400 mb-8 space-y-1">
+          <p>📅 {{ actividad.fecha }}</p>
+          <p>🎤 {{ actividad.expositor }}</p>
+        </div>
 
-        <section
-            x-show="!enviando && paso === 0"
-            class="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg sm:p-8"
-        >
-            <img src="{% static 'img/logo-fecoopse.png' %}" alt="FECOOPSE" class="mx-auto mb-6 h-20 w-auto">
-            <div class="mb-6 text-center">
-                <h1 class="text-2xl font-bold text-gray-900">
-                    {% if actividad %}{{ actividad.nombre }}{% else %}Evaluación FECOOPSE{% endif %}
-                </h1>
-                <p class="mt-2 text-base font-medium text-feco-blue">
-                    {% if actividad %}{{ actividad.tipo_actividad }}{% else %}Formulario de evaluación{% endif %}
-                </p>
-                <p class="mt-4 text-sm leading-6 text-gray-600">
-                    Este formulario nos ayuda a mejorar nuestras actividades. Tarda menos de 5 minutos en completarse.
-                </p>
-            </div>
+        <!-- Botón -->
+        <button @click="paso = 1"
+                class="w-full bg-feco-blue text-white font-semibold py-4 rounded-2xl
+                       hover:bg-feco-blue-dark active:scale-95 transition-all duration-150
+                       text-lg shadow-md shadow-blue-200">
+          Comenzar evaluación →
+        </button>
 
-            <div class="space-y-4">
-                <input
-                    type="text"
-                    x-model="cedula"
-                    placeholder="Cédula nacional, DIMEX o DIMES"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
-                >
-                <input
-                    type="text"
-                    x-model="nombre"
-                    placeholder="Tu nombre"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
-                >
-                <input
-                    type="text"
-                    x-model="apellidos"
-                    placeholder="Tus apellidos"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
-                >
-            </div>
+        <p class="text-xs text-gray-300 mt-6 border-t border-gray-100 pt-4">
+          © 2026 FECOOPSE R.L. — Todos los derechos reservados.
+        </p>
+      </div>
+    </div>
 
-            <p x-show="errorCampos" x-text="errorCampos" class="mt-4 text-sm font-medium text-red-600"></p>
+    <!-- ============================
+         PASOS 1-17: PREGUNTAS ESCALA
+         ============================ -->
+    <template x-for="(pregunta, idx) in preguntasEscala" :key="pregunta.codigo">
+      <div x-show="paso === idx + 1"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-x-4"
+           x-transition:enter-end="opacity-100 translate-x-0"
+           class="w-full max-w-lg">
 
+        <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8">
+          <!-- Sección -->
+          <p class="text-feco-blue text-xs font-semibold uppercase tracking-wider mb-3"
+             x-text="pregunta.seccion"></p>
+
+          <!-- Pregunta -->
+          <h2 class="text-xl font-bold text-gray-800 mb-8 leading-snug"
+              x-text="pregunta.texto"></h2>
+
+          <!-- Botones MB B R D MD (escala de valor) -->
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            <template x-for="opcion in opcionesEscala" :key="opcion.valor">
+              <button
+                @click="seleccionarEscala(pregunta.codigo, opcion.valor)"
+                :class="respuestasEscala[pregunta.codigo] === opcion.valor
+                  ? 'border-feco-blue bg-feco-blue text-white shadow-md shadow-blue-200 scale-105'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-feco-blue hover:bg-blue-50'"
+                class="border-2 rounded-2xl py-4 px-2 text-center transition-all duration-150
+                       active:scale-95 cursor-pointer">
+                <div class="text-lg font-bold" x-text="opcion.etiqueta"></div>
+                <div class="text-xs mt-1 opacity-80" x-text="opcion.descripcion"></div>
+              </button>
+            </template>
+          </div>
+
+          <!-- Botón NA separado visualmente -->
+          <div class="border-t border-dashed border-gray-200 pt-4">
             <button
-                type="button"
-                @click="avanzarDesdeBienvenida()"
-                class="mt-6 w-full rounded-xl bg-feco-blue py-4 text-lg font-semibold text-white transition hover:bg-feco-blue-dark"
-            >
-                Comenzar evaluación →
+              @click="seleccionarEscala(pregunta.codigo, null)"
+              :class="respuestasEscala[pregunta.codigo] === null && pregunta.codigo in respuestasEscala
+                ? 'border-gray-400 bg-gray-100 text-gray-600'
+                : 'border-gray-200 bg-gray-50 text-gray-400 hover:border-gray-400 hover:bg-gray-100'"
+              class="w-full border-2 rounded-2xl py-3 px-4 text-center transition-all duration-150
+                     active:scale-95 cursor-pointer text-sm font-medium">
+              NA — No aplica / No puedo evaluar este ítem
             </button>
-        </section>
+          </div>
 
-        <section
-            x-show="!enviando && preguntaEscalaActual"
-            class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg sm:p-8"
-        >
-            <button
-                type="button"
-                x-show="paso > 0"
-                @click="paso = Math.max(0, paso - 1)"
-                class="mb-6 text-sm font-medium text-gray-500 transition hover:text-feco-blue"
-            >
-                ← Anterior
-            </button>
+          <!-- Botón anterior -->
+          <button x-show="paso > 1" @click="paso--"
+                  class="mt-6 text-sm text-gray-400 hover:text-feco-blue transition-colors">
+            ← Anterior
+          </button>
+        </div>
+      </div>
+    </template>
 
-            <p class="text-center text-sm font-medium text-feco-blue" x-text="preguntaEscalaActual?.seccion"></p>
-            <h2 class="mt-4 text-center text-xl font-semibold leading-8 text-gray-800" x-text="preguntaEscalaActual?.texto"></h2>
+    <!-- ============================
+         PASO 18: PREGUNTA CONDICIONAL
+         ============================ -->
+    <template x-for="(pregunta, idx) in preguntasCondicionales" :key="pregunta.codigo">
+      <div x-show="paso === preguntasEscala.length + 1 + idx"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-x-4"
+           x-transition:enter-end="opacity-100 translate-x-0"
+           class="w-full max-w-lg">
 
-            <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <template x-for="opcion in opcionesEscala" :key="opcion.valor">
-                    <button
-                        type="button"
-                        @click="seleccionarEscala(preguntaEscalaActual.codigo, opcion.valor)"
-                        class="rounded-xl border-2 px-3 py-4 text-center transition"
-                        :class="respuestasEscala[preguntaEscalaActual?.codigo] === opcion.valor ? 'border-feco-blue bg-feco-blue-light text-feco-blue' : 'border-gray-200 text-gray-700 hover:border-blue-300'"
-                    >
-                        <span class="block text-lg font-bold" x-text="opcion.valor"></span>
-                        <span class="mt-1 block text-xs font-medium" x-text="opcion.texto"></span>
-                    </button>
-                </template>
-            </div>
-        </section>
+        <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8">
+          <p class="text-feco-blue text-xs font-semibold uppercase tracking-wider mb-3">
+            Impacto y retroalimentación
+          </p>
+          <h2 class="text-xl font-bold text-gray-800 mb-8 leading-snug"
+              x-text="pregunta.texto"></h2>
 
-        <section
-            x-show="!enviando && esPasoAbiertas"
-            class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg sm:p-8"
-        >
-            <button
-                type="button"
-                x-show="paso > 0"
-                @click="paso = Math.max(0, paso - 1)"
-                class="mb-6 text-sm font-medium text-gray-500 transition hover:text-feco-blue"
-            >
-                ← Anterior
-            </button>
+          <!-- Opciones SI / PARCIALMENTE / NO -->
+          <div class="space-y-3 mb-6">
+            <template x-for="opcion in opcionesCondicional" :key="opcion.valor">
+              <button
+                @click="seleccionarCondicional(pregunta.codigo, opcion.valor)"
+                :class="respuestasCondicionales[pregunta.codigo]?.opcion === opcion.valor
+                  ? 'border-feco-blue bg-feco-blue-light text-feco-blue font-semibold'
+                  : 'border-gray-200 text-gray-700 hover:border-feco-blue hover:bg-blue-50'"
+                class="w-full border-2 rounded-2xl py-4 px-5 text-left transition-all
+                       duration-150 active:scale-98 cursor-pointer flex items-center gap-3">
+                <span class="text-lg" x-text="opcion.emoji"></span>
+                <span x-text="opcion.etiqueta"></span>
+              </button>
+            </template>
+          </div>
 
-            <p class="text-center text-sm font-medium text-feco-blue">Para mejorar la actividad</p>
-            <h2 class="mt-4 text-center text-xl font-semibold leading-8 text-gray-800" x-text="preguntaAbiertaActual?.texto"></h2>
-
+          <!-- Campo de justificación condicional -->
+          <div x-show="respuestasCondicionales[pregunta.codigo]?.opcion === 'PARCIAL' ||
+                        respuestasCondicionales[pregunta.codigo]?.opcion === 'NO'"
+               x-transition
+               class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              ¿Por qué? <span class="text-gray-400 font-normal">(opcional)</span>
+            </label>
             <textarea
-                rows="4"
-                x-model="respuestasAbiertas[preguntaAbiertaActual?.codigo]"
-                class="mt-8 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-feco-blue"
-            ></textarea>
-            <p class="mt-2 text-sm text-gray-500">Esta respuesta es opcional</p>
+              x-model="respuestasCondicionales[pregunta.codigo].justificacion"
+              rows="3"
+              placeholder="Explica brevemente tu respuesta..."
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-feco-blue resize-none">
+            </textarea>
+          </div>
 
-            <p x-show="error" x-text="error" class="mt-4 text-sm font-medium text-red-600"></p>
+          <!-- Botón siguiente -->
+          <button
+            @click="avanzarDesdeCondicional(pregunta.codigo)"
+            :disabled="!respuestasCondicionales[pregunta.codigo]?.opcion"
+            :class="respuestasCondicionales[pregunta.codigo]?.opcion
+              ? 'bg-feco-blue text-white hover:bg-feco-blue-dark shadow-md'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
+            class="w-full py-4 rounded-2xl font-semibold transition-all duration-150
+                   active:scale-95">
+            Siguiente →
+          </button>
 
-            <button
-                type="button"
-                @click="avanzarAbierta()"
-                class="mt-6 w-full rounded-xl bg-feco-blue py-4 text-lg font-semibold text-white transition hover:bg-feco-blue-dark"
-            >
-                <span x-text="esUltimoPasoAbiertas ? 'Enviar evaluación ✓' : 'Siguiente →'"></span>
-            </button>
-        </section>
-    </main>
+          <button @click="paso--"
+                  class="mt-4 text-sm text-gray-400 hover:text-feco-blue transition-colors block">
+            ← Anterior
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============================
+         PASOS ABIERTAS
+         ============================ -->
+    <template x-for="(pregunta, idx) in preguntasAbiertas" :key="pregunta.codigo">
+      <div x-show="paso === preguntasEscala.length + preguntasCondicionales.length + 1 + idx"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-x-4"
+           x-transition:enter-end="opacity-100 translate-x-0"
+           class="w-full max-w-lg">
+
+        <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8">
+          <p class="text-feco-blue text-xs font-semibold uppercase tracking-wider mb-3">
+            Retroalimentación
+          </p>
+          <h2 class="text-xl font-bold text-gray-800 mb-2 leading-snug"
+              x-text="pregunta.texto"></h2>
+          <p class="text-gray-400 text-sm mb-6">Esta respuesta es opcional</p>
+
+          <textarea
+            x-model="respuestasAbiertas[pregunta.codigo]"
+            rows="4"
+            placeholder="Escribe tu respuesta aquí..."
+            class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-feco-blue resize-none mb-6">
+          </textarea>
+
+          <button
+            @click="avanzarDesdeAbierta(idx)"
+            class="w-full bg-feco-blue text-white py-4 rounded-2xl font-semibold
+                   hover:bg-feco-blue-dark active:scale-95 transition-all duration-150 shadow-md">
+            <span x-text="idx === preguntasAbiertas.length - 1 ? 'Continuar →' : 'Siguiente →'"></span>
+          </button>
+
+          <button @click="paso--"
+                  class="mt-4 text-sm text-gray-400 hover:text-feco-blue transition-colors block">
+            ← Anterior
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============================
+         ÚLTIMO PASO: CORREO
+         ============================ -->
+    <div x-show="paso === totalPasos - 1"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-x-4"
+         x-transition:enter-end="opacity-100 translate-x-0"
+         class="w-full max-w-md">
+
+      <div class="bg-white rounded-3xl shadow-xl p-8">
+        <div class="text-center mb-8">
+          <div class="text-4xl mb-3">📧</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Ya casi terminamos!</h2>
+          <p class="text-gray-500 text-sm">
+            Ingresá tu correo para registrar tu evaluación.<br>
+            Solo se usa para evitar respuestas duplicadas.
+          </p>
+        </div>
+
+        <input
+          type="email"
+          x-model="correo"
+          placeholder="tu.correo@ejemplo.com"
+          @keyup.enter="enviar()"
+          class="w-full border border-gray-300 rounded-xl px-4 py-4 text-base
+                 focus:outline-none focus:ring-2 focus:ring-feco-blue mb-3">
+
+        <!-- Error de correo duplicado -->
+        <div x-show="errorCorreo" x-transition
+             class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+          <p class="text-red-600 text-sm" x-text="errorCorreo"></p>
+        </div>
+
+        <!-- Error general -->
+        <div x-show="error" x-transition
+             class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+          <p class="text-red-600 text-sm" x-text="error"></p>
+        </div>
+
+        <button
+          @click="enviar()"
+          :disabled="enviando || !correo.trim()"
+          :class="correo.trim() && !enviando
+            ? 'bg-feco-blue text-white hover:bg-feco-blue-dark shadow-md'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
+          class="w-full py-4 rounded-2xl font-semibold transition-all duration-150 active:scale-95 mb-4">
+          <span x-show="!enviando">Enviar evaluación ✓</span>
+          <span x-show="enviando">Enviando...</span>
+        </button>
+
+        <button @click="paso--"
+                class="w-full text-sm text-gray-400 hover:text-feco-blue transition-colors">
+          ← Anterior
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================
+         PANTALLA ENVIANDO
+         ============================ -->
+    <div x-show="enviando"
+         class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="text-center">
+        <div class="w-16 h-16 border-4 border-feco-blue border-t-transparent rounded-full
+                    animate-spin mx-auto mb-4"></div>
+        <p class="text-gray-600 font-medium">Enviando tu evaluación...</p>
+      </div>
+    </div>
+
+  </main>
 </div>
 
+<!-- Alpine.js Logic -->
 <script>
-    function formularioEvaluacion() {
-        return {
-            paso: 0,
-            totalPasos: 0,
-            cedula: '',
-            nombre: '',
-            apellidos: '',
-            respuestasEscala: {},
-            respuestasAbiertas: {},
-            preguntasEscala: [],
-            preguntasAbiertas: [],
-            enviando: false,
-            enviado: false,
-            error: '',
-            errorCampos: '',
-            opcionesEscala: [
-                { valor: 'NA', texto: 'No Aplica' },
-                { valor: 'MB', texto: 'Muy Bueno' },
-                { valor: 'B', texto: 'Bueno' },
-                { valor: 'R', texto: 'Regular' },
-                { valor: 'D', texto: 'Deficiente' },
-                { valor: 'MD', texto: 'Muy Deficiente' },
-            ],
+function formulario() {
+  return {
+    paso: 0,
+    totalPasos: 0,
+    preguntasEscala: [],
+    preguntasCondicionales: [],
+    preguntasAbiertas: [],
+    actividad: {
+      nombre: '{{ actividad.nombre|escapejs }}',
+      tipo_actividad: '{{ actividad.tipo_actividad|escapejs }}',
+      expositor: '{{ actividad.expositor|escapejs }}',
+      fecha: '{{ actividad.fecha }}',
+    },
+    correo: '',
+    respuestasEscala: {},
+    respuestasCondicionales: {},
+    respuestasAbiertas: {},
+    enviando: false,
+    error: '',
+    errorCorreo: '',
 
-            init() {
-                this.preguntasEscala = JSON.parse(document.getElementById('preguntas-escala-data').textContent)
-                this.preguntasAbiertas = JSON.parse(document.getElementById('preguntas-abiertas-data').textContent)
-                this.totalPasos = 1 + this.preguntasEscala.length + this.preguntasAbiertas.length
-            },
+    opcionesEscala: [
+      { valor: 5, etiqueta: 'MB', descripcion: 'Muy Bueno' },
+      { valor: 4, etiqueta: 'B',  descripcion: 'Bueno' },
+      { valor: 3, etiqueta: 'R',  descripcion: 'Regular' },
+      { valor: 2, etiqueta: 'D',  descripcion: 'Deficiente' },
+      { valor: 1, etiqueta: 'MD', descripcion: 'Muy Deficiente' },
+    ],
 
-            get progreso() {
-                return Math.round((this.paso / this.totalPasos) * 100)
-            },
+    opcionesCondicional: [
+      { valor: 'SI',      etiqueta: 'Sí, completamente', emoji: '✅' },
+      { valor: 'PARCIAL', etiqueta: 'Parcialmente',      emoji: '🔶' },
+      { valor: 'NO',      etiqueta: 'No',                emoji: '❌' },
+    ],
 
-            get preguntaEscalaActual() {
-                if (this.paso >= 1 && this.paso <= this.preguntasEscala.length) {
-                    return this.preguntasEscala[this.paso - 1]
-                }
-                return null
-            },
+    init() {
+      this.preguntasEscala = JSON.parse(
+        document.getElementById('preguntas-escala-data').textContent
+      )
+      this.preguntasCondicionales = JSON.parse(
+        document.getElementById('preguntas-condicionales-data').textContent
+      )
+      this.preguntasAbiertas = JSON.parse(
+        document.getElementById('preguntas-abiertas-data').textContent
+      )
+      // totalPasos = 0(bienvenida) + escala + condicionales + abiertas + correo
+      this.totalPasos = 1 + this.preguntasEscala.length 
+                          + this.preguntasCondicionales.length 
+                          + this.preguntasAbiertas.length 
+                          + 1
+    },
 
-            get preguntaAbiertaActual() {
-                const idx = this.paso - 1 - this.preguntasEscala.length
-                if (idx >= 0 && idx < this.preguntasAbiertas.length) {
-                    return this.preguntasAbiertas[idx]
-                }
-                return null
-            },
+    get progreso() {
+      if (this.totalPasos <= 1) return 0
+      return Math.round((this.paso / (this.totalPasos - 1)) * 100)
+    },
 
-            get esPasoAbiertas() {
-                return this.paso > this.preguntasEscala.length && this.paso <= this.totalPasos - 1
-            },
+    get pasoTexto() {
+      if (this.paso === 0) return ''
+      if (this.paso >= this.totalPasos - 1) return 'Último paso'
+      return `${this.paso} / ${this.totalPasos - 2}`
+    },
 
-            get esUltimoPasoAbiertas() {
-                return this.paso === this.totalPasos - 1
-            },
+    seleccionarEscala(codigo, valor) {
+      // Marcar como respondida (incluyendo NA = null)
+      this.respuestasEscala[codigo] = valor
+      // Avanzar automáticamente después de 350ms
+      setTimeout(() => { this.paso++ }, 350)
+    },
 
-            validarDatosPersonales() {
-                if (!this.cedula.trim() || this.cedula.trim().length < 5) {
-                    this.errorCampos = 'Por favor ingresá un número de cédula válido (mínimo 5 caracteres).'
-                    return false
-                }
-                if (!this.nombre.trim()) {
-                    this.errorCampos = 'Por favor ingresá tu nombre.'
-                    return false
-                }
-                if (!this.apellidos.trim()) {
-                    this.errorCampos = 'Por favor ingresá tus apellidos.'
-                    return false
-                }
-                this.errorCampos = ''
-                return true
-            },
+    seleccionarCondicional(codigo, opcion) {
+      if (!this.respuestasCondicionales[codigo]) {
+        this.respuestasCondicionales[codigo] = { opcion: '', justificacion: '' }
+      }
+      this.respuestasCondicionales[codigo].opcion = opcion
+      // Si selecciona SI, limpiar justificación
+      if (opcion === 'SI') {
+        this.respuestasCondicionales[codigo].justificacion = ''
+      }
+    },
 
-            avanzarDesdeBienvenida() {
-                if (this.validarDatosPersonales()) {
-                    this.paso = 1
-                }
-            },
+    avanzarDesdeCondicional(codigo) {
+      if (!this.respuestasCondicionales[codigo]?.opcion) return
+      this.paso++
+    },
 
-            seleccionarEscala(codigo, valor) {
-                this.respuestasEscala[codigo] = valor
-                setTimeout(() => { this.paso++ }, 400)
-            },
+    avanzarDesdeAbierta(idx) {
+      this.paso++
+    },
 
-            avanzarAbierta() {
-                if (this.esUltimoPasoAbiertas) {
-                    this.enviar()
-                } else {
-                    this.paso++
-                }
-            },
+    async enviar() {
+      this.errorCorreo = ''
+      this.error = ''
 
-            async enviar() {
-                this.enviando = true
-                this.error = ''
+      if (!this.correo.trim()) {
+        this.errorCorreo = 'Por favor ingresá tu correo.'
+        return
+      }
 
-                const payload = {
-                    cedula: this.cedula.trim(),
-                    nombre: this.nombre.trim(),
-                    apellidos: this.apellidos.trim(),
-                    respuestas_escala: Object.entries(this.respuestasEscala).map(([codigo, valor]) => ({
-                        pregunta_codigo: codigo,
-                        valor: valor
-                    })),
-                    respuestas_abiertas: Object.entries(this.respuestasAbiertas)
-                        .filter(([_, texto]) => texto && texto.trim())
-                        .map(([codigo, texto]) => ({
-                            pregunta_codigo: codigo,
-                            texto: texto.trim()
-                        }))
-                }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(this.correo.trim())) {
+        this.errorCorreo = 'Por favor ingresá un correo válido.'
+        return
+      }
 
-                try {
-                    const response = await fetch('/api/evaluacion/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
-                        },
-                        body: JSON.stringify(payload)
-                    })
+      this.enviando = true
 
-                    if (response.ok) {
-                        this.enviado = true
-                        window.location.href = '/gracias/'
-                    } else {
-                        await response.json()
-                        this.error = 'Hubo un error al enviar. Por favor intentá de nuevo.'
-                        this.enviando = false
-                    }
-                } catch(e) {
-                    this.error = 'Error de conexión. Verificá tu internet e intentá de nuevo.'
-                    this.enviando = false
-                }
-            }
+      // Construir payload
+      const respuestasEscalaArray = Object.entries(this.respuestasEscala).map(
+        ([codigo, valor]) => ({ pregunta_codigo: codigo, valor: valor })
+      )
+
+      const respuestasCondicionalesArray = Object.entries(this.respuestasCondicionales)
+        .filter(([_, r]) => r.opcion)
+        .map(([codigo, r]) => ({
+          pregunta_codigo: codigo,
+          opcion: r.opcion,
+          justificacion: r.justificacion || '',
+        }))
+
+      const respuestasAbiertasArray = Object.entries(this.respuestasAbiertas)
+        .filter(([_, texto]) => texto && texto.trim())
+        .map(([codigo, texto]) => ({ pregunta_codigo: codigo, texto: texto.trim() }))
+
+      const payload = {
+        correo: this.correo.trim().toLowerCase(),
+        respuestas_escala: respuestasEscalaArray,
+        respuestas_condicionales: respuestasCondicionalesArray,
+        respuestas_abiertas: respuestasAbiertasArray,
+      }
+
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+
+      try {
+        const response = await fetch('/api/evaluacion/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify(payload),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          window.location.href = '/gracias/'
+        } else if (response.status === 400) {
+          // Error de correo duplicado
+          if (data.correo) {
+            this.errorCorreo = Array.isArray(data.correo) ? data.correo[0] : data.correo
+          } else {
+            this.error = 'Error en el formulario. Verificá tus respuestas.'
+          }
+          this.enviando = false
+          // Volver al paso del correo
+          this.paso = this.totalPasos - 1
+        } else {
+          this.error = 'Ocurrió un error inesperado. Intentá de nuevo.'
+          this.enviando = false
         }
-    }
+      } catch (e) {
+        this.error = 'Error de conexión. Verificá tu internet e intentá de nuevo.'
+        this.enviando = false
+      }
+    },
+  }
+}
 </script>
+
 {% endblock %}
